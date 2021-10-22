@@ -42,8 +42,14 @@ AUDIO EdBGM;
 
 //背景の構造体
 IMAGE TitlePic;
-IMAGE PlayPic;
 IMAGE EdPic;
+
+//ロゴの読み込み
+IMAGE Logo;
+
+//PushEnterの構造体
+IMAGE EnterPic;
+IMAGE EdEnter;
 
 //プロトタイプ宣言
 VOID Title(VOID);		//タイトル画面
@@ -207,8 +213,10 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	DeleteSoundMem(EdBGM.handle);
 	//背景の開放
 	DeleteGraph(TitlePic.handle);
-	DeleteGraph(PlayPic.handle);
-	DeleteGraph(EdPic.handle);
+
+	//PushEnterの解放
+	DeleteGraph(EnterPic.handle);
+	DeleteGraph(EdEnter.handle);
 
 	// ＤＸライブラリ使用の終了処理（準備）
 	DxLib_End();
@@ -244,14 +252,31 @@ BOOL GameLoad()
 	EdPic.x = 0;
 	EdPic.y = 0;
 	EdPic.IsDraw = TRUE;
-	return TRUE;
 
+	//エンターの読み込み
+	if (!LoadImageMem(&EnterPic, ".\\image\\Enter.png")) { return FALSE; }
+	if (!LoadImageMem(&EdEnter, ".\\image\\EdEnter.png")) { return FALSE; }
+
+	//ロゴの読み込み
+	if (!LoadImageMem(&Logo, ".\\image\\TitleLogo.png")) { return FALSE; }
+
+	return TRUE;
 }
 // - - - - - データロード - - - - - //
 
 VOID GameInit(VOID)
 {
+	//ロゴの位置
+	Logo.x = 0;
+	Logo.y = -60;
 
+	//PushEnterの位置
+	EnterPic.x = 385;
+	EnterPic.y = -10;
+
+	//エンドエンターの位置
+	EdEnter.x = 400;
+	EdEnter.y = -25;
 
 }
 
@@ -332,9 +357,45 @@ VOID TitleProc(VOID)
 /// </summary>
 VOID TitleDraw(VOID)
 {
+	//背景の描画
 	DrawGraph(TitlePic.x, TitlePic.y, TitlePic.handle, TRUE);
+	//ロゴの描画
+	DrawGraph(Logo.x, Logo.y, Logo.handle, TRUE);
+	//PushEnterの描画
+	if (PushEnterCnt < PushEnterCntMAX) { PushEnterCnt++; }
+	else
+	{
+		if (PushEnterBrink == TRUE)PushEnterBrink = FALSE;
+		else if (PushEnterBrink == FALSE)PushEnterBrink = TRUE;
 
-	DrawString(0, 0, "タイトル画面", GetColor(0, 0, 0));
+		PushEnterCnt = 0;	//カウンタを初期化
+	}
+
+	if (PushEnterBrink == TRUE)
+	{
+		//半透明にする
+		SetDrawBlendMode(DX_BLENDMODE_ALPHA, ((float)PushEnterCnt / PushEnterCntMAX) * 255);
+
+		//PushEnterの描画
+		DrawGraph(EnterPic.x, EnterPic.y, EnterPic.handle, TRUE);
+
+		//半透明終了
+		SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+	}
+
+	if (PushEnterBrink == FALSE)
+	{
+		//半透明にする
+		SetDrawBlendMode(DX_BLENDMODE_ALPHA, ((float)(PushEnterCntMAX - PushEnterCnt) / PushEnterCntMAX) * 255);
+
+		//PushEnterの描画
+		DrawGraph(EnterPic.x, EnterPic.y, EnterPic.handle, TRUE);
+
+		//半透明終了
+		SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+	}
+
+	//DrawString(0, 0, "タイトル画面", GetColor(0, 0, 0));
 	return;
 }
 
@@ -413,9 +474,45 @@ VOID EndProc(VOID)
 /// </summary>
 VOID EndDraw(VOID)
 {
+	//背景の描画
 	DrawGraph(EdPic.x, EdPic.y, EdPic.handle, TRUE);
+	//ロゴの描画
+	DrawGraph(Logo.x, Logo.y, Logo.handle, TRUE);
+	//PushEnterの描画
+	if (PushEnterCnt < PushEnterCntMAX) { PushEnterCnt++; }
+	else
+	{
+		if (PushEnterBrink == TRUE)PushEnterBrink = FALSE;
+		else if (PushEnterBrink == FALSE)PushEnterBrink = TRUE;
 
-	DrawString(0, 0, "エンド画面", GetColor(0, 0, 0));
+		PushEnterCnt = 0;	//カウンタを初期化
+	}
+
+	if (PushEnterBrink == TRUE)
+	{
+		//半透明にする
+		SetDrawBlendMode(DX_BLENDMODE_ALPHA, ((float)PushEnterCnt / PushEnterCntMAX) * 255);
+
+		//PushEnterの描画
+		DrawGraph(EdEnter.x, EdEnter.y, EdEnter.handle, TRUE);
+
+		//半透明終了
+		SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+	}
+
+	if (PushEnterBrink == FALSE)
+	{
+		//半透明にする
+		SetDrawBlendMode(DX_BLENDMODE_ALPHA, ((float)(PushEnterCntMAX - PushEnterCnt) / PushEnterCntMAX) * 255);
+
+		//PushEnterの描画
+		DrawGraph(EdEnter.x, EdEnter.y, EdEnter.handle, TRUE);
+
+		//半透明終了
+		SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+	}
+
+	//DrawString(0, 0, "エンド画面", GetColor(0, 0, 0));
 	return;
 }
 
