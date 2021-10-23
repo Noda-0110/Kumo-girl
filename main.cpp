@@ -63,6 +63,8 @@ IMAGE EdEnter;
 DIVIMAGE PlayerDIVIMG;
 MUKI muki = muki_shita;
 
+Goal Kumo;
+
 //マップ構造体
 MAP_DATA map;
 
@@ -98,7 +100,7 @@ VOID ChangeScene(GAME_SCENE scene);	//シーン切り替え
 
 VOID collUpdateplayer(CHARACTOR* chara);	//当たり判定の領域を更新
 
-VOID collUpdateGoal(CHARACTOR* chara);	//当たり判定の領域を更新
+VOID collUpdateGoal(Goal* chara);	//当たり判定の領域を更新
 
 VOID collUpdateenemy(CHARACTOR* chara);	//当たり判定の領域を更新
 
@@ -235,6 +237,9 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	DeleteGraph(EnterPic.handle);
 	DeleteGraph(EdEnter.handle);
 
+	//ゴールの削除
+	DeleteGraph(Kumo.img.handle);
+
 	//プレイヤーの分割画像削除
 	for (int i = 0; i < PlayerDIVIMG.DivMax; i++) { DeleteGraph(PlayerDIVIMG.handle[i]); }
 
@@ -297,6 +302,10 @@ BOOL GameLoad()
 		return FALSE;
 	}
 
+	//ゴールの情報を所得
+	GetGraphSize(Kumo.img.handle, &Kumo.img.width, &Kumo.img.height);
+	if (!LoadImageMem(&Kumo.img, ".\\Image\\クモ.png")) { return FALSE; }
+
 	return TRUE;
 }
 // - - - - - データロード - - - - - //
@@ -316,8 +325,19 @@ VOID GameInit(VOID)
 	EdEnter.y = -15;
 
 	//プレイヤーの位置
-	PlayerDIVIMG.x = 250;
-	PlayerDIVIMG.y = 250;
+	PlayerDIVIMG.x = 288;
+	PlayerDIVIMG.y = 370;
+
+	muki = muki_shita;
+
+	//ゴール初期化
+	Kumo.img.x = 120;
+	Kumo.img.y = 120;
+	Kumo.speed = 200;
+	Kumo.img.IsDraw = TRUE;
+
+	//当たり判定(ゴール)
+	collUpdateGoal(&Kumo);
 
 }
 
@@ -377,7 +397,7 @@ VOID Title(VOID)
 /// </summary>
 VOID TitleProc(VOID)
 {
-
+	GameInit();
 	if (KeyClick(KEY_INPUT_RETURN) == TRUE)
 	{
 		//BGMの停止
@@ -497,7 +517,19 @@ VOID PlayProc(VOID)
 			ChangeScene(GAME_SCENE_PLAY);
 		}
 		*/
+		collUpdateGoal(&Kumo);
+		//プレイヤーがゴールに当たった時
+		if (colltouch(dummy.coll, Kumo.coll) == TRUE)
+		{
+			//BGMを止める
+			StopSoundMem(PlayBGM.handle);
+
+			ChangeScene(GAME_SCENE_END);
+			return;
+		}
 	}
+
+
 
 	return;
 }
@@ -510,7 +542,9 @@ VOID PlayDraw(VOID)
 
 	DrawMap(map);
 
-	DrawString(0, 0, "プレイ画面", GetColor(0, 0, 0));
+	DrawGraph(Kumo.img.x, Kumo.img.y, Kumo.img.handle, TRUE);
+
+	DrawString(500, 100, "クモに会いに行こう", GetColor(0, 0, 0));
 	return;
 }
 
@@ -687,7 +721,7 @@ VOID ChangeDraw(VOID)
 	//半透明終了
 	SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
 
-	DrawString(0, 0, "切り替え画面", GetColor(0, 0, 0));
+	//DrawString(0, 0, "切り替え画面", GetColor(0, 0, 0));
 	return;
 }
 
@@ -709,7 +743,7 @@ VOID collUpdateplayer(CHARACTOR* chara)
 /// 当たり判定の更新(ゴール用)
 /// </summary>
 /// <param name="coll">当たり判定の領域</param>
-VOID collUpdateGoal(CHARACTOR* chara)
+VOID collUpdateGoal(Goal* chara)
 {
 	chara->coll.left = chara->img.x;
 	chara->coll.top = chara->img.y;

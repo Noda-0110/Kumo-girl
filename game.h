@@ -17,7 +17,7 @@
 
 #define GAME_WINDOW_BAR 0	//ウインドウバーの種類
 
-#define GAME_DEBUG TRUE		//デバックモード
+#define GAME_DEBUG FALSE		//デバックモード
 
 
 #define PATH_MAX	255		//パスの長さ
@@ -92,6 +92,14 @@ struct DIVIMAGE
 	BOOL IsAnimLoop = FALSE;		//アニメーションをループさせるか？
 };
 
+//ゴールの構造体
+struct Goal
+{
+	IMAGE img;
+	int speed = -1;
+
+	RECT coll;
+};
 
 /*
 //動画の構造体
