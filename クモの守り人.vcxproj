@@ -154,11 +154,13 @@
     <ClCompile Include="FPS.cpp" />
     <ClCompile Include="keyboard.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Map.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="FPS.h" />
     <ClInclude Include="game.h" />
     <ClInclude Include="keyboard.h" />
+    <ClInclude Include="Map.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="アイコン.ico" />

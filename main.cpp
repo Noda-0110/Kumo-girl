@@ -3,8 +3,16 @@
 #include "game.h"		//ゲームを管理する為のヘッダファイル　あくまでもゲームの管理
 #include "keyboard.h"	//キーボードの処理
 #include "FPS.h"		//FPSの処理
+#include "Map.h"		//FPSの処理
 
-
+enum MUKI
+{
+	muki_none,
+	muki_ue,
+	muki_hidari,
+	muki_shita,
+	muki_migi
+};
 
 //グローバル変数
 //シーンを管理する変数
@@ -51,6 +59,13 @@ IMAGE Logo;
 IMAGE EnterPic;
 IMAGE EdEnter;
 
+//プレイヤーの構造体 charchipの器
+DIVIMAGE PlayerDIVIMG;
+MUKI muki = muki_shita;
+
+//マップ構造体
+MAP_DATA map;
+
 //プロトタイプ宣言
 VOID Title(VOID);		//タイトル画面
 VOID TitleProc(VOID);	//タイトル画面（処理）
@@ -72,6 +87,10 @@ VOID ChangeDraw(VOID);	//切り替え画面（描画）
 VOID PlayAudio(AUDIO audio);
 //音楽の停止
 VOID StopAudio(AUDIO* audio);
+//分割して画像を読み込み
+BOOL LoadImageDivMem(DIVIMAGE* div, const char* path, int bunkatuYoko, int bunkatuTate);
+//分割画像の当たり判定更新
+VOID CollUpdateDivImage(DIVIMAGE* div);
 
 
 
@@ -159,8 +178,6 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		//ESCキーで強制終了
 		if (KeyClick(KEY_INPUT_ESCAPE) == TRUE) { break; }
 
-
-
 		//以前のシーンを所得
 		if (GameScene != GAME_SCENE_CHANGE)
 		{
@@ -198,25 +215,28 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		}
 
 		//FPS値を描画
-		FPSDraw();
+		//FPSDraw();
 		//FPS処理を待つ
 		FPSWait();
 
 		ScreenFlip();	//ダブルバッファリングした画面を描画
 	}
 
-	//- - - - データの開放 - - - -
+	//- - - - データの削除 - - - -
 
 	//音楽の削除
 	DeleteSoundMem(TitleBGM.handle);
 	DeleteSoundMem(PlayBGM.handle);
 	DeleteSoundMem(EdBGM.handle);
-	//背景の開放
+	//背景の削除
 	DeleteGraph(TitlePic.handle);
 
-	//PushEnterの解放
+	//PushEnterの削除
 	DeleteGraph(EnterPic.handle);
 	DeleteGraph(EdEnter.handle);
+
+	//プレイヤーの分割画像削除
+	for (int i = 0; i < PlayerDIVIMG.DivMax; i++) { DeleteGraph(PlayerDIVIMG.handle[i]); }
 
 	// ＤＸライブラリ使用の終了処理（準備）
 	DxLib_End();
@@ -254,11 +274,28 @@ BOOL GameLoad()
 	EdPic.IsDraw = TRUE;
 
 	//エンターの読み込み
-	if (!LoadImageMem(&EnterPic, ".\\image\\Enter.png")) { return FALSE; }
-	if (!LoadImageMem(&EdEnter, ".\\image\\EdEnter.png")) { return FALSE; }
+	if (!LoadImageMem(&EnterPic, ".\\Image\\Enter.png")) { return FALSE; }
+	if (!LoadImageMem(&EdEnter, ".\\Image\\EdEnter.png")) { return FALSE; }
 
 	//ロゴの読み込み
-	if (!LoadImageMem(&Logo, ".\\image\\TitleLogo.png")) { return FALSE; }
+	if (!LoadImageMem(&Logo, ".\\Image\\TitleLogo.png")) { return FALSE; }
+
+	//プレイヤーの読み込み
+	if (LoadImageDivMem(&PlayerDIVIMG, ".\\Image\\charachip.png", 3, 4) == FALSE) { return FALSE; }
+
+	//マップの読み込み
+
+	//サンプルマップデータを読み込み
+	if (LoadCSVMap(
+		IMG_PATH_MAP1,
+		CSV_PATH_MAP1_SHITA,
+		CSV_PATH_MAP1_NAKA,
+		CSV_PATH_MAP1_NAKA_ATARI,
+		CSV_PATH_MAP1_UE,
+		&map,
+		MAP1_YOKO_DIV, MAP1_TATE_DIV) == FALSE) {
+		return FALSE;
+	}
 
 	return TRUE;
 }
@@ -276,7 +313,11 @@ VOID GameInit(VOID)
 
 	//エンドエンターの位置
 	EdEnter.x = 400;
-	EdEnter.y = -25;
+	EdEnter.y = -15;
+
+	//プレイヤーの位置
+	PlayerDIVIMG.x = 250;
+	PlayerDIVIMG.y = 250;
 
 }
 
@@ -348,7 +389,9 @@ VOID TitleProc(VOID)
 		return;
 	}
 
+	//音楽を鳴らす
 	PlayAudio(TitleBGM);
+
 
 	return;
 }
@@ -427,14 +470,46 @@ VOID PlayProc(VOID)
 	}
 	PlayAudio(PlayBGM);
 
+
+	//マップの当たり判定を取得
+	{
+		muki = muki_none;	//最初は向きを無しにする
+		DIVIMAGE dummy = PlayerDIVIMG;	//当たり判定のダミーを作成 
+		//ダミーを先行させて当たらなければダミーが本体に代わる
+		if (KeyDown(KEY_INPUT_W)) { muki = muki_ue; dummy.y--; }
+		else if (KeyDown(KEY_INPUT_S)) { muki = muki_shita; dummy.y++; }
+		if (KeyDown(KEY_INPUT_A)) { muki = muki_hidari; dummy.x--; }
+		else if (KeyDown(KEY_INPUT_D)) { muki = muki_migi; dummy.x++; }
+
+		CollUpdateDivImage(&dummy);	//当たり判定の更新
+
+		if (CollMap(dummy.coll, map) == FALSE)
+		{
+			PlayerDIVIMG = dummy;	//ダミー情報を戻す
+		}
+		/*
+		if (CheckCollRectToRect(PlayerDIVIMG.coll, event) == TRUE)
+		{
+			GameInit();
+
+			StopAudio(&PlayBGM);
+
+			ChangeScene(GAME_SCENE_PLAY);
+		}
+		*/
+	}
+
 	return;
 }
 /// <summary>
 /// プレイ画面　描画
 /// </summary>
 VOID PlayDraw(VOID)
-
 {
+	{DrawDivImage(&PlayerDIVIMG); }
+
+	DrawMap(map);
+
 	DrawString(0, 0, "プレイ画面", GetColor(0, 0, 0));
 	return;
 }
@@ -712,6 +787,195 @@ BOOL LoadImageMem(IMAGE* image, const char* path)
 
 }
 
+
+/// <summary>
+/// 画像を分割してメモリに読み込み
+/// </summary>
+/// <param name="handle">ハンドル配列の先頭アドレス</param>
+/// <param name="path">画像のパス</param>
+/// <param name="bunkatuYoko">分割するときの横の数</param>
+/// <param name="bunkatuTate">分割するときの縦の数</param>
+/// <returns></returns>
+BOOL LoadImageDivMem(DIVIMAGE* div, const char* path, int bunkatuYoko, int bunkatuTate)
+{
+	int IsLoad = -1;	//画像が読み込めたか？
+
+	//一時的に画像のハンドルを用意する
+	int TempHandle = LoadGraph(path);
+
+	//読み込みエラー
+	if (TempHandle == -1)
+	{
+		MessageBox(
+			GetMainWindowHandle(),	//ウィンドウハンドル
+			path,					//本文
+			"画像読み込みエラー",	//タイトル
+			MB_OK					//ボタン
+		);
+
+		return FALSE;
+	}
+
+	//画像の幅と高さを取得
+	int Width = -1;		//幅
+	int Height = -1;	//高さ
+	GetGraphSize(TempHandle, &Width, &Height);
+
+	//分割読み込み
+	IsLoad = LoadDivGraph(
+		path,							//画像のパス
+		bunkatuYoko * bunkatuTate,		//分割総数
+		bunkatuYoko, bunkatuTate,					//横と縦の分割
+		Width / bunkatuYoko, Height / bunkatuTate,	//画像1つの幅,高さ
+		div->handle									//連続で管理する配列の先頭アドレス
+	);
+
+	//分割エラー
+	if (IsLoad == -1)
+	{
+		MessageBox(
+			GetMainWindowHandle(),	//ウィンドウハンドル
+			path,					//本文
+			"画像分割エラー",		//タイトル
+			MB_OK					//ボタン
+		);
+
+		return FALSE;	//読み込み失敗
+	}
+
+	//情報を設定
+	div->DivYoko = bunkatuYoko;
+	div->DivTate = bunkatuTate;
+	div->DivMax = div->DivYoko * div->DivTate;
+	div->x = 0;
+	div->y = 0;
+	GetGraphSize(div->handle[0], &div->width, &div->height);
+	div->AnimCnt = 0;
+	div->IsAnimLoop = FALSE;
+	div->nowIndex = 0;
+
+	//当たり判定更新
+	CollUpdateDivImage(div);
+
+	//画像描画する
+	div->IsDraw = TRUE;
+
+	//一時的に読み込んだハンドルを解放
+	DeleteGraph(TempHandle);
+
+	return TRUE;
+}
+
+
+/// <summary>
+/// 分割画像の描画
+/// </summary>
+/// <param name="image">描画する画像構造体</param>
+/// <returns></returns>
+/// <returns></returns>
+VOID DrawDivImage(DIVIMAGE* image)
+{
+	//画像が描画できるときは
+	if (image->IsDraw == TRUE)
+	{
+		DrawGraph(image->x, image->y, image->handle[image->nowIndex], TRUE);
+
+		//アニメーションのカウントアップ
+		if (image->AnimCnt < image->AnimCntMAX) { image->AnimCnt++; }
+		else
+		{
+
+			//右向きのとき(画像によって数字が違うので、合わせること！)
+			if (muki == muki_migi)
+			{
+				if (image->nowIndex >= 6 && image->nowIndex < 8)
+				{
+					image->nowIndex++;
+				}
+				else
+				{
+					image->nowIndex = 6;
+				}
+			}
+
+			//左向きのとき(画像によって数字が違うので、合わせること！)
+			if (muki == muki_hidari)
+			{
+				if (image->nowIndex >= 3 && image->nowIndex < 5)
+				{
+					image->nowIndex++;
+				}
+				else
+				{
+					image->nowIndex = 3;
+				}
+			}
+
+			//上向きのとき(画像によって数字が違うので、合わせること！)
+			if (muki == muki_ue)
+			{
+				if (image->nowIndex >= 9 && image->nowIndex < 11)
+				{
+					image->nowIndex++;
+				}
+				else
+				{
+					image->nowIndex = 9;
+				}
+			}
+
+			//下向きのとき(画像によって数字が違うので、合わせること！)
+			if (muki == muki_shita)
+			{
+				if (image->nowIndex >= 0 && image->nowIndex < 2)
+				{
+					image->nowIndex++;
+				}
+				else
+				{
+					image->nowIndex = 0;
+				}
+			}
+
+			//向き無しのときは、直前の向きの真ん中の画像にする(画像に合わせて決めてネ)
+			if (muki == muki_none)
+			{
+				if (image->nowIndex >= 6 && image->nowIndex <= 8) { image->nowIndex = 7; }
+				if (image->nowIndex >= 3 && image->nowIndex <= 5) { image->nowIndex = 4; }
+				if (image->nowIndex >= 9 && image->nowIndex <= 11) { image->nowIndex = 10; }
+				if (image->nowIndex >= 0 && image->nowIndex <= 2) { image->nowIndex = 1; }
+			}
+
+			image->AnimCnt = 0;	//カウンタ0クリア
+		}
+	}
+
+	//デバッグモードのときは
+	if (GAME_DEBUG == TRUE)
+	{
+		//当たり判定を描画
+		DrawRect(image->coll, GetColor(255, 255, 255), FALSE);
+	}
+	return;
+}
+
+
+/// <summary>
+/// 当たり判定の領域更新（分割画像）
+/// </summary>
+/// <param name="img">画像構造体のポインタ</param>
+VOID CollUpdateDivImage(DIVIMAGE* div)
+{
+	div->coll.left = div->x;
+	div->coll.top = div->y;
+
+	div->coll.right = div->x + div->width;
+	div->coll.bottom = div->y + div->height;
+
+	return;
+}
+
+//音楽の再生
 VOID PlayAudio(AUDIO audio)
 {
 	//ループ再生でないなら、そのまま再生
