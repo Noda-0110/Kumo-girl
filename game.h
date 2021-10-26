@@ -7,9 +7,10 @@
 
 
 //マクロ定義
-#define GAME_TITLE "ゲームタイトル"	//ゲームタイトル
-#define GAME_WIDTH  720		//ゲーム画面の幅
-#define GAME_HEIGHT 720			//ゲーム画面の高さ
+#define GAME_TITLE "クモと少女"	//ゲームタイトル
+#define GAME_WIDTH  720	//ゲーム画面の幅
+#define GAME_HEIGHT 720	//ゲーム画面の高さ
+
 #define GAME_COLOR  32			//ゲームの色域
 
 #define GAME_ICON_ID 333			//ゲームのICONのID
@@ -23,7 +24,9 @@
 #define PATH_MAX	255		//パスの長さ
 #define IMGDIV_MAX	128		//ハンドルの最大数
 
-
+//画面外の文字の位置
+#define TEXT_X 540
+#define TEXT_Y 160
 
 //列挙型
 enum GAME_SCENE {

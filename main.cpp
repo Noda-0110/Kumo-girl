@@ -48,6 +48,8 @@ AUDIO TitleBGM;
 AUDIO PlayBGM;
 AUDIO EdBGM;
 
+AUDIO PianoBGM;
+
 //背景の構造体
 IMAGE TitlePic;
 IMAGE EdPic;
@@ -59,14 +61,24 @@ IMAGE Logo;
 IMAGE EnterPic;
 IMAGE EdEnter;
 
+//吹き出しの構造体
+IMAGE Hukidasi;
+
 //プレイヤーの構造体 charchipの器
 DIVIMAGE PlayerDIVIMG;
 MUKI muki = muki_shita;
 
+//ゴールの構造体
 Goal Kumo;
 
 //マップ構造体
 MAP_DATA map;
+
+//イベントマス
+RECT bedevent;
+RECT pianoevent;
+RECT kurozevent;
+RECT bookevent;
 
 //プロトタイプ宣言
 VOID Title(VOID);		//タイトル画面
@@ -230,12 +242,16 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	DeleteSoundMem(TitleBGM.handle);
 	DeleteSoundMem(PlayBGM.handle);
 	DeleteSoundMem(EdBGM.handle);
+	DeleteSoundMem(PianoBGM.handle);
 	//背景の削除
 	DeleteGraph(TitlePic.handle);
 
 	//PushEnterの削除
 	DeleteGraph(EnterPic.handle);
 	DeleteGraph(EdEnter.handle);
+
+	//吹き出しの削除
+	DeleteGraph(Hukidasi.handle);
 
 	//ゴールの削除
 	DeleteGraph(Kumo.img.handle);
@@ -265,6 +281,7 @@ BOOL GameLoad()
 	if (!LoadAudio(&TitleBGM, ".\\Audio\\Title画面.mp3",255,DX_PLAYTYPE_LOOP)) { return FALSE; }
 	if (!LoadAudio(&PlayBGM, ".\\Audio\\Play画面.mp3",255,DX_PLAYTYPE_LOOP)) { return FALSE; }
 	if (!LoadAudio(&EdBGM, ".\\Audio\\Ed画面.mp3",255,DX_PLAYTYPE_LOOP)) { return FALSE; }
+	if (!LoadAudio(&PianoBGM, ".\\Audio\\少女の演奏.mp3",255,DX_PLAYTYPE_LOOP)) { return FALSE; }
 
 	//背景の諸々の読み込み
 	//タイトル画面の背景
@@ -281,6 +298,9 @@ BOOL GameLoad()
 	//エンターの読み込み
 	if (!LoadImageMem(&EnterPic, ".\\Image\\Enter.png")) { return FALSE; }
 	if (!LoadImageMem(&EdEnter, ".\\Image\\EdEnter.png")) { return FALSE; }
+
+	//吹き出しの読み込み
+	if (!LoadImageMem(&Hukidasi, ".\\Image\\吹き出し.png")) { return FALSE; }
 
 	//ロゴの読み込み
 	if (!LoadImageMem(&Logo, ".\\Image\\TitleLogo.png")) { return FALSE; }
@@ -306,6 +326,8 @@ BOOL GameLoad()
 	GetGraphSize(Kumo.img.handle, &Kumo.img.width, &Kumo.img.height);
 	if (!LoadImageMem(&Kumo.img, ".\\Image\\クモ.png")) { return FALSE; }
 
+
+
 	return TRUE;
 }
 // - - - - - データロード - - - - - //
@@ -324,6 +346,10 @@ VOID GameInit(VOID)
 	EdEnter.x = 400;
 	EdEnter.y = -15;
 
+	//吹き出しの位置
+	Hukidasi.x = 490;
+	Hukidasi.y = 100;
+
 	//プレイヤーの位置
 	PlayerDIVIMG.x = 288;
 	PlayerDIVIMG.y = 370;
@@ -339,6 +365,27 @@ VOID GameInit(VOID)
 	//当たり判定(ゴール)
 	collUpdateGoal(&Kumo);
 
+	//イベントの発生位置
+	//ベッドの位置
+	bedevent.top = map.height * (8.5) + 1;
+	bedevent.left = map.width * (12) + 1;
+	bedevent.bottom = map.height * (10 + 1) + 1;
+	bedevent.right = map.width * (12 + 1) + 1;
+	//ピアノの位置
+	pianoevent.top = map.height * (3.5) + 1;
+	pianoevent.left = map.width * (11) + 1;
+	pianoevent.bottom = map.height * (4.5 + 1) + 1;
+	pianoevent.right = map.width * (11 + 1) + 1;
+	//クローゼットの位置
+	kurozevent.top = map.height * (4) + 1;
+	kurozevent.left = map.width * (2) + 1;
+	kurozevent.bottom = map.height * (4 + 1) + 1;
+	kurozevent.right = map.width * (2 + 1) + 1;
+	//本棚の位置
+	bookevent.top = map.height * (4) + 1;
+	bookevent.left = map.width * (8) + 1;
+	bookevent.bottom = map.height * (4 + 1) + 1;
+	bookevent.right = map.width * (7.5 + 1) + 1;
 }
 
 /// <summary>
@@ -477,7 +524,9 @@ VOID Play(VOID)
 /// </summary>
 VOID PlayProc(VOID)
 {
-
+	DrawGraph(Hukidasi.x, Hukidasi.y, Hukidasi.handle, TRUE);
+	//エンターキーで画面遷移
+	/*
 	if (KeyClick(KEY_INPUT_RETURN) == TRUE)
 	{
 		//BGMの停止
@@ -488,6 +537,7 @@ VOID PlayProc(VOID)
 
 		return;
 	}
+	*/
 	PlayAudio(PlayBGM);
 
 
@@ -507,16 +557,34 @@ VOID PlayProc(VOID)
 		{
 			PlayerDIVIMG = dummy;	//ダミー情報を戻す
 		}
-		/*
-		if (CheckCollRectToRect(PlayerDIVIMG.coll, event) == TRUE)
+		
+		//イベントの処理
+		if (CheckCollRectToRect(PlayerDIVIMG.coll, bedevent) == TRUE)
 		{
-			GameInit();
+			DrawString(TEXT_X, TEXT_Y, "私のベッドだ\n外で寝るから\nあまり使わない", GetColor(0, 0, 0));
 
-			StopAudio(&PlayBGM);
-
-			ChangeScene(GAME_SCENE_PLAY);
 		}
-		*/
+		if (CheckCollRectToRect(PlayerDIVIMG.coll, pianoevent) == TRUE)
+		{
+			StopSoundMem(PlayBGM.handle);
+			PlayAudio(PianoBGM);
+			DrawString(TEXT_X, TEXT_Y, "ピアノ\n誕生日に貰った物\n少しだけ引ける", GetColor(0, 0, 0));
+		}
+		else
+		{
+			StopSoundMem(PianoBGM.handle);
+		}
+
+		if (CheckCollRectToRect(PlayerDIVIMG.coll, kurozevent) == TRUE)
+		{
+			DrawString(TEXT_X, TEXT_Y, "クローゼット\n今はまだ\n着替える必要はない", GetColor(0, 0, 0));
+		}
+
+		if (CheckCollRectToRect(PlayerDIVIMG.coll, bookevent) == TRUE)
+		{
+			DrawString(TEXT_X, TEXT_Y, "本棚\n洞窟や火山など\n冒険の本がある", GetColor(0, 0, 0));
+		}
+		
 		collUpdateGoal(&Kumo);
 		//プレイヤーがゴールに当たった時
 		if (colltouch(dummy.coll, Kumo.coll) == TRUE)
@@ -543,8 +611,13 @@ VOID PlayDraw(VOID)
 	DrawMap(map);
 
 	DrawGraph(Kumo.img.x, Kumo.img.y, Kumo.img.handle, TRUE);
+	//ロゴの描画
+	DrawGraph(430, 530, Logo.handle, TRUE);
 
-	DrawString(500, 100, "クモに会いに行こう", GetColor(0, 0, 0));
+	if(GAME_DEBUG==TRUE)
+	DrawRect(bookevent, GetColor(255, 0, 0), TRUE);
+
+	DrawString(500, 50, "クモに会いに行こう", GetColor(0, 0, 0));
 	return;
 }
 
