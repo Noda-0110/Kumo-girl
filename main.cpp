@@ -88,6 +88,7 @@ VOID TitleDraw(VOID);	//タイトル画面（描画）
 VOID Play(VOID);		//プレイ画面
 VOID PlayProc(VOID);	//プレイ画面（処理）
 VOID PlayDraw(VOID);	//プレイ画面（描画）
+VOID EventDraw(VOID);	//イベントマスの描画
 
 VOID End(VOID);			//エンド画面
 VOID EndProc(VOID);		//エンド画面（処理）
@@ -286,6 +287,8 @@ BOOL GameLoad()
 	//背景の諸々の読み込み
 	//タイトル画面の背景
 	if (LoadImageMem(&TitlePic, ".\\Image\\タイトル画面.png") == FALSE) { return FALSE; }
+	//if (LoadImageMem(&TitlePic, ".\\Image\\タイトル画面2.png") == FALSE) { return FALSE; }
+	
 	TitlePic.x = 0;
 	TitlePic.y = 0;
 	TitlePic.IsDraw = TRUE;
@@ -516,6 +519,7 @@ VOID TitleDraw(VOID)
 VOID Play(VOID)
 {
 	PlayProc();
+	EventDraw();
 	PlayDraw();
 	return;
 }
@@ -524,23 +528,22 @@ VOID Play(VOID)
 /// </summary>
 VOID PlayProc(VOID)
 {
-	DrawGraph(Hukidasi.x, Hukidasi.y, Hukidasi.handle, TRUE);
-	//エンターキーで画面遷移
-	/*
-	if (KeyClick(KEY_INPUT_RETURN) == TRUE)
+	if(GAME_DEBUG==TRUE)
 	{
-		//BGMの停止
-		StopAudio(&PlayBGM);
+		if (KeyClick(KEY_INPUT_RETURN) == TRUE)
+		{
+			//BGMの停止
+			StopAudio(&PlayBGM);
 
-		//エンド画面への遷移
-		ChangeScene(GAME_SCENE_END);
+			//エンド画面への遷移
+			ChangeScene(GAME_SCENE_END);
 
-		return;
+			return;
+		}
 	}
-	*/
+	
+
 	PlayAudio(PlayBGM);
-
-
 	//マップの当たり判定を取得
 	{
 		muki = muki_none;	//最初は向きを無しにする
@@ -558,32 +561,7 @@ VOID PlayProc(VOID)
 			PlayerDIVIMG = dummy;	//ダミー情報を戻す
 		}
 		
-		//イベントの処理
-		if (CheckCollRectToRect(PlayerDIVIMG.coll, bedevent) == TRUE)
-		{
-			DrawString(TEXT_X, TEXT_Y, "私のベッドだ\n外で寝るから\nあまり使わない", GetColor(0, 0, 0));
 
-		}
-		if (CheckCollRectToRect(PlayerDIVIMG.coll, pianoevent) == TRUE)
-		{
-			StopSoundMem(PlayBGM.handle);
-			PlayAudio(PianoBGM);
-			DrawString(TEXT_X, TEXT_Y, "ピアノ\n誕生日に貰った物\n少しだけ引ける", GetColor(0, 0, 0));
-		}
-		else
-		{
-			StopSoundMem(PianoBGM.handle);
-		}
-
-		if (CheckCollRectToRect(PlayerDIVIMG.coll, kurozevent) == TRUE)
-		{
-			DrawString(TEXT_X, TEXT_Y, "クローゼット\n今はまだ\n着替える必要はない", GetColor(0, 0, 0));
-		}
-
-		if (CheckCollRectToRect(PlayerDIVIMG.coll, bookevent) == TRUE)
-		{
-			DrawString(TEXT_X, TEXT_Y, "本棚\n洞窟や火山など\n冒険の本がある", GetColor(0, 0, 0));
-		}
 		
 		collUpdateGoal(&Kumo);
 		//プレイヤーがゴールに当たった時
@@ -597,10 +575,9 @@ VOID PlayProc(VOID)
 		}
 	}
 
-
-
 	return;
 }
+
 /// <summary>
 /// プレイ画面　描画
 /// </summary>
@@ -621,6 +598,42 @@ VOID PlayDraw(VOID)
 	return;
 }
 
+/// <summary>
+/// イベントマスの処理
+/// </summary>
+VOID EventDraw(VOID)
+{
+	//吹き出しの描画
+	DrawGraph(Hukidasi.x, Hukidasi.y, Hukidasi.handle, TRUE);
+
+	//イベントの処理
+	if (CheckCollRectToRect(PlayerDIVIMG.coll, bedevent) == TRUE)
+	{
+		DrawString(TEXT_X, TEXT_Y, "私のベッドだ\n外で寝るから\nあまり使わない", GetColor(0, 0, 0));
+
+	}
+	if (CheckCollRectToRect(PlayerDIVIMG.coll, pianoevent) == TRUE)
+	{
+		StopSoundMem(PlayBGM.handle);
+		PlayAudio(PianoBGM);
+		DrawString(TEXT_X, TEXT_Y, "ピアノ\n誕生日に貰った物\n少しだけ引ける", GetColor(0, 0, 0));
+	}
+	else
+	{
+		StopSoundMem(PianoBGM.handle);
+	}
+
+	if (CheckCollRectToRect(PlayerDIVIMG.coll, kurozevent) == TRUE)
+	{
+		DrawString(TEXT_X, TEXT_Y, "クローゼット\n今はまだ\n着替える必要はない", GetColor(0, 0, 0));
+	}
+
+	if (CheckCollRectToRect(PlayerDIVIMG.coll, bookevent) == TRUE)
+	{
+		DrawString(TEXT_X, TEXT_Y, "本棚\n洞窟や火山など\n冒険の本がある", GetColor(0, 0, 0));
+	}
+	return;
+}
 
 /// <summary>
 /// エンド画面
@@ -651,6 +664,7 @@ VOID EndProc(VOID)
 
 	return;
 }
+
 /// <summary>
 /// エンド画面 描画
 /// </summary>
