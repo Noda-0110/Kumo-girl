@@ -8,21 +8,27 @@
 
 //マクロ定義
 #define GAME_TITLE "クモと少女"	//ゲームタイトル
-#define GAME_WIDTH  720	//ゲーム画面の幅
-#define GAME_HEIGHT 720	//ゲーム画面の高さ
 
-#define GAME_COLOR  32			//ゲームの色域
+//ゲーム画面の幅　高さ
+#define GAME_WIDTH  720
+#define GAME_HEIGHT 720
 
-#define GAME_ICON_ID 333			//ゲームのICONのID
+//ゲームの色域
+#define GAME_COLOR  32
 
+//ゲームのICONのID
+#define GAME_ICON_ID 333
 
-#define GAME_WINDOW_BAR 0	//ウインドウバーの種類
+//ウインドウバーの種類
+#define GAME_WINDOW_BAR 0
 
-#define GAME_DEBUG FALSE		//デバックモード
+//デバックモード TRUE/描画　FALSE/描画しない
+#define GAME_DEBUG FALSE
 
-
-#define PATH_MAX	255		//パスの長さ
-#define IMGDIV_MAX	128		//ハンドルの最大数
+//パスの長さ
+#define PATH_MAX	255
+//ハンドルの最大数
+#define IMGDIV_MAX	128
 
 //画面外の文字の位置
 #define TEXT_X 540
@@ -104,21 +110,34 @@ struct Goal
 	RECT coll;
 };
 
-/*
-//動画の構造体
-struct MOVIE
-{
-	int handle = -1;	//動画のハンドル
-	char path[255];		//動画のパス
 
-	int x;		//ｘ位置
-	int y;		//ｙ位置
-	int width;	//幅
-	int height;	//高さ
-	int Volume = 255;	//ボリューム（最小）0～255（最大）
-};
-*/
+extern VOID ChangeScene(GAME_SCENE scene);	//シーン切り替え
+
+extern VOID collUpdateplayer(CHARACTOR* chara);	//当たり判定の領域を更新
+
+extern VOID collUpdateGoal(Goal* chara);	//当たり判定の領域を更新
+
+extern VOID collUpdateenemy(CHARACTOR* chara);	//当たり判定の領域を更新
+
+extern BOOL colltouch(RECT a, RECT b);//当たり判定の触れているか触れていないかの判定
+
+extern BOOL IventProc(RECT a, RECT b);
+
+//ゲームデータの読み込み
+extern BOOL GameLoad(VOID);
+//音楽の情報
+extern BOOL LoadAudio(AUDIO* audio, const char* path, int volume, int playType);
+//音楽の読み込み
+extern BOOL LoadImageMem(IMAGE* image, const char* path);
+//音楽の再生
+extern VOID PlayAudio(AUDIO audio);
+//音楽の停止
+extern VOID StopAudio(AUDIO* audio);
 
 extern DIVIMAGE PlayerDIVIMG;
 //分割画像の描画
 extern VOID DrawDivImage(DIVIMAGE* image);
+//分割して画像を読み込み
+extern BOOL LoadImageDivMem(DIVIMAGE* div, const char* path, int bunkatuYoko, int bunkatuTate);
+//分割画像の当たり判定更新
+extern VOID CollUpdateDivImage(DIVIMAGE* div);

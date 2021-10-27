@@ -1,10 +1,11 @@
 //#CRT_SECURE_NO_WARNINGS
 //ヘッダファイル読み込み
-#include "game.h"		//ゲームを管理する為のヘッダファイル　あくまでもゲームの管理
+#include "game.h"		//ゲームを管理するヘッダファイル
 #include "keyboard.h"	//キーボードの処理
 #include "FPS.h"		//FPSの処理
 #include "Map.h"		//FPSの処理
 
+//キャラクターの向き
 enum MUKI
 {
 	muki_none,
@@ -98,31 +99,8 @@ VOID Change(VOID);		//切り替え画面
 VOID ChangeProc(VOID);	//切り替え画面（処理）
 VOID ChangeDraw(VOID);	//切り替え画面（描画）
 
-//音楽の再生
-VOID PlayAudio(AUDIO audio);
-//音楽の停止
-VOID StopAudio(AUDIO* audio);
-//分割して画像を読み込み
-BOOL LoadImageDivMem(DIVIMAGE* div, const char* path, int bunkatuYoko, int bunkatuTate);
-//分割画像の当たり判定更新
-VOID CollUpdateDivImage(DIVIMAGE* div);
 
 
-
-VOID ChangeScene(GAME_SCENE scene);	//シーン切り替え
-
-VOID collUpdateplayer(CHARACTOR* chara);	//当たり判定の領域を更新
-
-VOID collUpdateGoal(Goal* chara);	//当たり判定の領域を更新
-
-VOID collUpdateenemy(CHARACTOR* chara);	//当たり判定の領域を更新
-
-
-BOOL colltouch(RECT a, RECT b);//当たり判定の触れているか触れていないかの判定
-
-BOOL GameLoad(VOID);	//ゲームデータの読み込み
-BOOL LoadAudio(AUDIO* audio, const char* path, int volume, int playType);	
-BOOL LoadImageMem(IMAGE* image, const char* path);		//音楽の読み込み
 VOID GameInit(VOID);	//ゲームの初期化
 
 // プログラムは WinMain から始まります
@@ -229,9 +207,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 			}
 		}
 
-		//FPS値を描画
-		//FPSDraw();
-		//FPS処理を待つ
+
 		FPSWait();
 
 		ScreenFlip();	//ダブルバッファリングした画面を描画
@@ -246,6 +222,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	DeleteSoundMem(PianoBGM.handle);
 	//背景の削除
 	DeleteGraph(TitlePic.handle);
+	DeleteGraph(EdPic.handle);
 
 	//PushEnterの削除
 	DeleteGraph(EnterPic.handle);
@@ -617,6 +594,7 @@ VOID EventDraw(VOID)
 		StopSoundMem(PlayBGM.handle);
 		PlayAudio(PianoBGM);
 		DrawString(TEXT_X, TEXT_Y, "ピアノ\n誕生日に貰った物\n少しだけ引ける", GetColor(0, 0, 0));
+		
 	}
 	else
 	{
