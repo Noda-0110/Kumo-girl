@@ -50,6 +50,7 @@ AUDIO PlayBGM;
 AUDIO EdBGM;
 
 AUDIO PianoBGM;
+AUDIO TuboSE;
 
 //背景の構造体
 IMAGE TitlePic;
@@ -80,6 +81,7 @@ RECT bedevent;
 RECT pianoevent;
 RECT kurozevent;
 RECT bookevent;
+RECT Tuboevent;
 
 //プロトタイプ宣言
 VOID Title(VOID);		//タイトル画面
@@ -260,6 +262,7 @@ BOOL GameLoad()
 	if (!LoadAudio(&PlayBGM, ".\\Audio\\Play画面.mp3",255,DX_PLAYTYPE_LOOP)) { return FALSE; }
 	if (!LoadAudio(&EdBGM, ".\\Audio\\Ed画面.mp3",255,DX_PLAYTYPE_LOOP)) { return FALSE; }
 	if (!LoadAudio(&PianoBGM, ".\\Audio\\少女の演奏.mp3",255,DX_PLAYTYPE_LOOP)) { return FALSE; }
+	if (!LoadAudio(&TuboSE, ".\\Audio\\たたく音.mp3",255,DX_PLAYTYPE_NORMAL)) { return FALSE; }
 
 	//背景の諸々の読み込み
 	//タイトル画面の背景
@@ -366,6 +369,12 @@ VOID GameInit(VOID)
 	bookevent.left = map.width * (8) + 1;
 	bookevent.bottom = map.height * (4 + 1) + 1;
 	bookevent.right = map.width * (7.5 + 1) + 1;
+
+	//ツボの位置
+	Tuboevent.top = map.height * (10.5) + 1;
+	Tuboevent.left = map.width * (2) + 1;
+	Tuboevent.bottom = map.height * (12 + 1) + 1;
+	Tuboevent.right = map.width * (3 + 1) + 1;
 }
 
 /// <summary>
@@ -538,8 +547,6 @@ VOID PlayProc(VOID)
 			PlayerDIVIMG = dummy;	//ダミー情報を戻す
 		}
 		
-
-		
 		collUpdateGoal(&Kumo);
 		//プレイヤーがゴールに当たった時
 		if (colltouch(dummy.coll, Kumo.coll) == TRUE)
@@ -569,7 +576,7 @@ VOID PlayDraw(VOID)
 	DrawGraph(430, 530, Logo.handle, TRUE);
 
 	if(GAME_DEBUG==TRUE)
-	DrawRect(bookevent, GetColor(255, 0, 0), TRUE);
+	DrawRect(Tuboevent, GetColor(255, 0, 0), TRUE);
 
 	DrawString(500, 50, "クモに会いに行こう", GetColor(0, 0, 0));
 	return;
@@ -587,7 +594,6 @@ VOID EventDraw(VOID)
 	if (CheckCollRectToRect(PlayerDIVIMG.coll, bedevent) == TRUE)
 	{
 		DrawString(TEXT_X, TEXT_Y, "私のベッドだ\n外で寝るから\nあまり使わない", GetColor(0, 0, 0));
-
 	}
 	if (CheckCollRectToRect(PlayerDIVIMG.coll, pianoevent) == TRUE)
 	{
@@ -609,6 +615,17 @@ VOID EventDraw(VOID)
 	if (CheckCollRectToRect(PlayerDIVIMG.coll, bookevent) == TRUE)
 	{
 		DrawString(TEXT_X, TEXT_Y, "本棚\n洞窟や火山など\n冒険の本がある", GetColor(0, 0, 0));
+	}
+	//イベントの処理
+	if (CheckCollRectToRect(PlayerDIVIMG.coll, Tuboevent) == TRUE)
+	{
+
+		if (KeyClick(KEY_INPUT_RETURN) == TRUE)
+		{
+			PlayAudio(TuboSE);
+			return;
+		}
+
 	}
 	return;
 }
@@ -1092,7 +1109,14 @@ VOID PlayAudio(AUDIO audio)
 			PlaySoundMem(audio.handle, audio.playType);
 		}
 	}
-
+	else
+	{
+		if (CheckSoundMem(audio.handle) == 0)
+		{
+			//音楽の再生
+			PlaySoundMem(audio.handle, audio.playType);
+		}
+	}
 	return;
 }
 
